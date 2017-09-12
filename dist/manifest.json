@@ -1,0 +1,21 @@
+{
+  "short_name": "OPN",
+  "name": "Operacao Natal App",
+  "description": "App para escanear sacolinhas itens",
+  "display": "standalone",
+  "orientation": "portrait",
+  "icons": [
+	{
+		"src": "/images/touch/android-chrome-192x192.png",
+		"sizes": "192x192",
+		"type": "image/png"
+	},
+  {
+    "src": "/images/touch/android-chrome-512x512.png",
+    "sizes": "512x512",
+    "type": "image/png"
+  }],
+  "start_url": "/index.html?hs=true",
+  "theme_color": "#e4e4e4",
+  "background_color": "#fff"
+}
