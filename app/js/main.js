@@ -3,6 +3,7 @@ import {snackbar} from './snackbar.js';
 import styles from '../css/styles.css';
 import isURL from 'is-url';
 
+
 //If service worker is installed, show offline usage notification
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.ready.then((registration) => {
@@ -35,7 +36,10 @@ window.addEventListener("DOMContentLoaded", () => {
   var infoSvg = document.querySelector('.app__header-icon svg');
   var videoElement = document.querySelector('video');
   window.appOverlay = document.querySelector('.app__overlay');
-    
+  
+  // Initialize listener for the id button
+  selectFromInput();
+
   //Initializing qr scanner
   window.addEventListener('load', (event) => {
     QRReader.init(); //To initialize QR Scanner
@@ -75,6 +79,7 @@ window.addEventListener("DOMContentLoaded", () => {
   function scan() {
     if (!window.iOS) scanningEle.style.display = 'block';
     QRReader.scan((result) => {
+      console.log("Resultado do scan: " + result);
       copiedText = result;
       textBoxEle.value = result;
       textBoxEle.select();
@@ -82,11 +87,94 @@ window.addEventListener("DOMContentLoaded", () => {
       if (isURL(result)) {
         dialogOpenBtnElement.style.display = 'inline-block';
       }
-      dialogElement.classList.remove('app__dialog--hide');
-      dialogOverlayElement.classList.remove('app__dialog--hide');
+
+      // Check for OPN Ids
+      if(result.indexOf("OPN") === -1) {
+        alert("Por favor, coloque um qrCode natalino :)");
+        scan();
+        return;
+      }
+
+      var url = 'http://localhost:3000/cards/' + result.replace("OPN-","");
+      makeAjaxCall(url, "GET", null, null, function(data, textStatus) {
+          console.log("Data returned: ");
+          console.log(data);
+          console.log("TextStatus: " + textStatus);
+          if(nonExistent(data)) {
+            hideDialog();
+            return;
+          }
+          showDialog(data);
+      }, 
+      function(textStatus, errorThrown) {
+          console.log("Error: " + errorThrown);
+          console.log("TextStatus: " + textStatus);
+      });
+
     });
   }
+  /*
+    Makes a generic jquery ajax call
+    @params: 
+        url: url to make the call to,
+        method: http method,
+        data: data to be sent,
+        dataType: type of content data,
+        done: function if success,
+        fail: function if fail 
+  */
+function makeAjaxCall(url, method, data, dataType, done, fail) {
+  $.ajax({
+      url: url,
+      method: method,
+      data: data,
+      dataType: dataType
+  })
+  .done(function( data, textStatus, jqXHR ) {
+    done(data, textStatus);
+  })
+  .fail(function( jqXHR, textStatus, errorThrown ) {
+      fail(textStatus, errorThrown);
+  });
+}
+/* Function that sends the request for ID from data read from input
+  instead of qrCode scan */
+function selectFromInput() {
+	$(".app__input-submit").click(function() {
+    var id = $(".app__input-input").val();
+    var url = 'http://localhost:3000/cards/' + id;
+    $("#result").val(id);
+		makeAjaxCall(url, "GET", null, null, function(data, textStatus) {
+		  console.log("Data returned: ");
+		  console.log(data);
+      if(nonExistent(data)) {
+        return;
+      }
+      showDialog(data);
 
+		}, function(textStatus, errorThrown) {
+		  console.log("Error: " + errorThrown);
+		  console.log("TextStatus: " + textStatus);
+		});
+	});
+}
+  // Treats the "id not found" error
+  function nonExistent(data) {
+    if( data === null) {
+      alert("ID não encontrado");
+      console.error("ID não encontrado");
+      return true;
+    }
+    else return false;
+  }
+  // Shows the dialog box
+  function showDialog(data) {
+    $('#name__api').val(data["name"]);
+    dialogElement.classList.remove('app__dialog--hide');
+    dialogOverlayElement.classList.remove('app__dialog--hide');
+    $(".app__dialog").fadeIn(200);
+    $('.app__dialog-overlay').fadeIn(200);
+  }
   //Hide dialog
   function hideDialog() {
     copiedText = null;
@@ -97,9 +185,11 @@ window.addEventListener("DOMContentLoaded", () => {
       frame.className = "";
     }
 
-    dialogElement.classList.add('app__dialog--hide');
-    dialogOverlayElement.classList.add('app__dialog--hide');
-    scan();
+  $(".app__dialog").fadeOut(200, function() {
+      dialogElement.classList.add('app__dialog--hide');
+      dialogOverlayElement.classList.add('app__dialog--hide');
+      scan();
+  });
   }
 
   // For iOS support

@@ -315,6 +315,7 @@ video {
 
 .app__dialog--hide {
   display: none;
+  opacity: 0;
 }
 
 .app__overlay {
@@ -325,7 +326,7 @@ video {
   left: 0;
   border-color: #ffffff;
   border-width: 2px;
-  transition: all 200ms ease-in;
+  transition: all 0.5s ease-in;
   width: 360px;
   height: 360px;
   margin: auto;
@@ -382,7 +383,7 @@ video {
 }
 
 .app__input-submit {
-  color: #fff;
+  color: #ffffff;
   border: 2px solid #fff;
   background-color: #148318;
   padding: 12px 32px;
