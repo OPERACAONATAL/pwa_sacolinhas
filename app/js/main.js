@@ -30,6 +30,7 @@ window.addEventListener("DOMContentLoaded", () => {
   var dialogOverlayElement = document.querySelector('.app__dialog-overlay');
   var dialogOpenBtnElement = document.querySelector('.app__dialog-open');
   var dialogCloseBtnElement = document.querySelector('.app__dialog-close');
+  var showCardElement = document.querySelector(".app__showCard");
   var scanningEle = document.querySelector('.custom-scanner');
   var textBoxEle = document.querySelector('#result');
   var helpText = document.querySelector('.app__help-text');
@@ -65,15 +66,15 @@ window.addEventListener("DOMContentLoaded", () => {
   
   //Dialog close btn event
   dialogCloseBtnElement.addEventListener('click', hideDialog, false);
-  dialogOpenBtnElement.addEventListener('click', openInBrowser, false);
+  // dialogOpenBtnElement.addEventListener('click', openInBrowser, false);
 
-  //To open result in browser
-  function openInBrowser() {
-    console.log('Result: ', copiedText);
-    window.open(copiedText, '_blank', 'toolbar=0,location=0,menubar=0');
-    copiedText = null;
-    hideDialog();
-  }
+  // //To open result in browser
+  // function openInBrowser() {
+  //   console.log('Result: ', copiedText);
+  //   window.open(copiedText, '_blank', 'toolbar=0,location=0,menubar=0');
+  //   copiedText = null;
+  //   hideDialog();
+  // }
 
   //Scan
   function scan() {
@@ -99,7 +100,6 @@ window.addEventListener("DOMContentLoaded", () => {
       makeAjaxCall(url, "GET", null, null, function(data, textStatus) {
           console.log("Data returned: ");
           console.log(data);
-          console.log("TextStatus: " + textStatus);
           if(nonExistent(data)) {
             hideDialog();
             return;
@@ -140,8 +140,10 @@ function makeAjaxCall(url, method, data, dataType, done, fail) {
 /* Function that sends the request for ID from data read from input
   instead of qrCode scan */
 function selectFromInput() {
-	$(".app__input-submit").click(function() {
+	$(".app__input-submit").on("click", function() {
     var id = $(".app__input-input").val();
+    if( id == "") return;
+    // Must change address
     var url = 'http://localhost:3000/cards/' + id;
     $("#result").val(id);
 		makeAjaxCall(url, "GET", null, null, function(data, textStatus) {
@@ -151,14 +153,13 @@ function selectFromInput() {
         return;
       }
       showDialog(data);
-
 		}, function(textStatus, errorThrown) {
 		  console.log("Error: " + errorThrown);
 		  console.log("TextStatus: " + textStatus);
 		});
 	});
 }
-  // Treats the "id not found" error
+  /* Treats the "id not found" error */
   function nonExistent(data) {
     if( data === null) {
       alert("ID não encontrado");
@@ -167,14 +168,64 @@ function selectFromInput() {
     }
     else return false;
   }
-  // Shows the dialog box
+  /* Shows the dialog box */
   function showDialog(data) {
     $('#name__api').val(data["name"]);
     dialogElement.classList.remove('app__dialog--hide');
     dialogOverlayElement.classList.remove('app__dialog--hide');
-    $(".app__dialog").fadeIn(200);
-    $('.app__dialog-overlay').fadeIn(200);
+    $(".app__dialog").fadeIn(100);
+    $('.app__dialog-overlay').fadeIn(100, function() {
+      $(".app__dialog-open").one("click", function() {
+        console.log("one click app dialog open");
+        displayFields(data);
+      });
+    });
   }
+  /* Mount the fields to be displayed */
+  function displayFields(data) {
+    delete data["__v"];
+    var toAppend = ""
+    toAppend += "<div class='container'>"
+    for( var attr in data) {
+      toAppend += 
+      "<div class='item'>" + 
+        "<span class='identification'>" + attr + " : " + data[attr] + "</span>" +
+        "<input type='checkbox' name=" + attr + " value=" + data[attr] + ">" + 
+      "</div>";
+    }
+    toAppend += "</div>"
+    toAppend += "<button class='app__input-submit' id='sendBtn' type='submit'>Confirmar</button>"
+    $("#submit").append(toAppend);
+    $(".app__showCard").fadeIn(800);
+  }
+
+  /* Attach a submit handler to the form */
+  $("#submit").submit(function( event ) {
+    // Stop form from submitting normally
+    event.preventDefault();
+
+    // Get some values from elements on the page:
+    // get all the inputs into an array.
+    var $inputs = $('#submit :input:checked');
+    var values = {};
+    $inputs.each(function() {
+        values[this.name] = $(this).val();
+    });
+    console.log(values);
+
+    var id = values["_id"];
+    var url = "http://localhost:3000/cards/"
+    
+    makeAjaxCall(url + id, "PUT", values, "json", function(data, textStatus) {
+		  console.log("Data returned: ");
+      console.log(data);
+		}, function(textStatus, errorThrown) {
+		  console.log("Error: " + errorThrown);
+		  console.log("TextStatus: " + textStatus);
+		});
+
+  });
+
   //Hide dialog
   function hideDialog() {
     copiedText = null;
@@ -185,10 +236,15 @@ function selectFromInput() {
       frame.className = "";
     }
 
-  $(".app__dialog").fadeOut(200, function() {
-      dialogElement.classList.add('app__dialog--hide');
-      dialogOverlayElement.classList.add('app__dialog--hide');
-      scan();
+  $(".app__dialog").fadeOut(100, function() {
+    dialogElement.classList.add('app__dialog--hide');
+    dialogOverlayElement.classList.add('app__dialog--hide');
+    $(".app__showCard").hide(function() {
+      $(".app__dialog-open").click(function() {
+        $("#submit").empty();
+      });
+    });
+    scan();
   });
   }
 
