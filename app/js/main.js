@@ -4,6 +4,8 @@ import styles from '../css/styles.css';
 import isURL from 'is-url';
 
 
+var host = "http://localhost:3000"
+
 //If service worker is installed, show offline usage notification
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.ready.then((registration) => {
@@ -66,21 +68,11 @@ window.addEventListener("DOMContentLoaded", () => {
   
   //Dialog close btn event
   dialogCloseBtnElement.addEventListener('click', hideDialog, false);
-  // dialogOpenBtnElement.addEventListener('click', openInBrowser, false);
-
-  // //To open result in browser
-  // function openInBrowser() {
-  //   console.log('Result: ', copiedText);
-  //   window.open(copiedText, '_blank', 'toolbar=0,location=0,menubar=0');
-  //   copiedText = null;
-  //   hideDialog();
-  // }
 
   //Scan
   function scan() {
     if (!window.iOS) scanningEle.style.display = 'block';
     QRReader.scan((result) => {
-      console.log("Resultado do scan: " + result);
       copiedText = result;
       textBoxEle.value = result;
       textBoxEle.select();
@@ -96,7 +88,7 @@ window.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      var url = 'http://localhost:3000/cards/' + result.replace("OPN-","");
+      var url = host + '/cards/' + result.replace("OPN-","");
       makeAjaxCall(url, "GET", null, null, function(data, textStatus) {
           console.log("Data returned: ");
           console.log(data);
@@ -144,7 +136,7 @@ function selectFromInput() {
     var id = $(".app__input-input").val();
     if( id == "") return;
     // Must change address
-    var url = 'http://localhost:3000/cards/' + id;
+    var url = host + '/cards/' + id;
     $("#result").val(id);
 		makeAjaxCall(url, "GET", null, null, function(data, textStatus) {
 		  console.log("Data returned: ");
@@ -163,69 +155,22 @@ function selectFromInput() {
   function nonExistent(data) {
     if( data === null) {
       alert("ID não encontrado");
-      console.error("ID não encontrado");
       return true;
     }
     else return false;
   }
   /* Shows the dialog box */
   function showDialog(data) {
-    $('#name__api').val(data["name"]);
+    $('#name__api').val(data["nome"]);
     dialogElement.classList.remove('app__dialog--hide');
     dialogOverlayElement.classList.remove('app__dialog--hide');
     $(".app__dialog").fadeIn(100);
     $('.app__dialog-overlay').fadeIn(100, function() {
       $(".app__dialog-open").one("click", function() {
-        console.log("one click app dialog open");
         displayFields(data);
       });
     });
   }
-  /* Mount the fields to be displayed */
-  function displayFields(data) {
-    delete data["__v"];
-    var toAppend = ""
-    toAppend += "<div class='container'>"
-    for( var attr in data) {
-      toAppend += 
-      "<div class='item'>" + 
-        "<span class='identification'>" + attr + " : " + data[attr] + "</span>" +
-        "<input type='checkbox' name=" + attr + " value=" + data[attr] + ">" + 
-      "</div>";
-    }
-    toAppend += "</div>"
-    toAppend += "<button class='app__input-submit' id='sendBtn' type='submit'>Confirmar</button>"
-    $("#submit").append(toAppend);
-    $(".app__showCard").fadeIn(800);
-  }
-
-  /* Attach a submit handler to the form */
-  $("#submit").submit(function( event ) {
-    // Stop form from submitting normally
-    event.preventDefault();
-
-    // Get some values from elements on the page:
-    // get all the inputs into an array.
-    var $inputs = $('#submit :input:checked');
-    var values = {};
-    $inputs.each(function() {
-        values[this.name] = $(this).val();
-    });
-    console.log(values);
-
-    var id = values["_id"];
-    var url = "http://localhost:3000/cards/"
-    
-    makeAjaxCall(url + id, "PUT", values, "json", function(data, textStatus) {
-		  console.log("Data returned: ");
-      console.log(data);
-		}, function(textStatus, errorThrown) {
-		  console.log("Error: " + errorThrown);
-		  console.log("TextStatus: " + textStatus);
-		});
-
-  });
-
   //Hide dialog
   function hideDialog() {
     copiedText = null;
@@ -236,16 +181,100 @@ function selectFromInput() {
       frame.className = "";
     }
 
-  $(".app__dialog").fadeOut(100, function() {
-    dialogElement.classList.add('app__dialog--hide');
-    dialogOverlayElement.classList.add('app__dialog--hide');
-    $(".app__showCard").hide(function() {
-      $(".app__dialog-open").click(function() {
-        $("#submit").empty();
+    $(".app__dialog").fadeOut(100, function() {
+      dialogElement.classList.add('app__dialog--hide');
+      dialogOverlayElement.classList.add('app__dialog--hide');
+      $(".app__showCard").hide(function() {
+        $(".app__dialog-open").click(function() {
+          $("#submit").empty();
+        });
+      });
+      scan();
+    });
+  }
+  /* Mount the fields to be displayed */
+  function displayFields(data) {
+    delete data["__v"];
+    var id = data["_id"];
+    var toAppend = appendValues(data);
+    $("#submit").append(toAppend);
+    $(".app__showCard").fadeIn(800, function() {
+      sendValues(id);
+    });
+
+  }
+  /* Create the list display for the fields */
+  function appendValues(data) {
+    var toAppend = ""
+    toAppend += "<div class='container'>"
+    for( var attr in data) {
+      switch(attr) {
+        case "_id":
+        case "nome":
+        case "idade":
+          toAppend += 
+          "<span class='item header'>" + 
+            "<span class='identification'>" + attr + " : " + data[attr] + "</span>" +
+            "<input class='hidden' type='checkbox' name=" + attr + " value=" + data[attr] + ">" + 
+          "</span><hr>";
+          break;
+        case "calca":
+        case "camiseta":
+          toAppend += 
+          "<span class='item'>" + 
+            "<span class='identification'>" + attr + " : " + data[attr].tamanho + "</span>" +
+            "<input type='checkbox' name=" + attr + " value=" + data[attr].existe + ">" + 
+          "</span>";
+          break;
+        case "observacao":
+        toAppend += 
+        "<div class='item'>" + 
+          "<span class='identification'>" + attr + "</span>" +
+          "<textarea placeholder='Digite observações sobre a sacolinha' name=" + attr + "></textarea>" + 
+        "</div>";
+        break;
+        default:
+          toAppend += 
+          "<div class='item'>" + 
+            "<span class='identification'>" + attr + "</span>" +
+            "<input type='checkbox' name=" + attr + " value=" + data[attr] + ">" + 
+          "</div>";
+          break;
+      }
+    }
+    toAppend += "</div>"
+    toAppend += "<button class='app__input-submit' id='sendBtn' type='submit'>Confirmar</button>"
+    return toAppend;
+  }
+
+  function sendValues(id) {
+    /* Attach a submit handler to the form */
+    $("#submit").submit(function( event ) {
+      // Stop form from submitting normally
+      event.preventDefault();
+
+      // Get some values from elements on the page:
+      // get all the inputs into an array.
+      var $inputs = $('#submit :input:checked');
+      var $textarea = $('textarea');
+      var values = {};
+      values["_id"] = id;
+      $inputs.each(function() {
+        var bool = $(this).val() == "false";
+        values[this.name] = bool;
+      });
+      values[$textarea[0].name] = $textarea[0].value;
+  
+      var url = host + "/cards/"
+      makeAjaxCall(url + id, "PUT", values, "json", function(data, textStatus) {
+        console.log("Data returned: ");
+        console.log(data);
+        alert("Sacolinha enviada com sucesso! VAI NATAL!!!");
+      }, function(textStatus, errorThrown) {
+        console.log("Error: " + errorThrown);
+        console.log("TextStatus: " + textStatus);
       });
     });
-    scan();
-  });
   }
 
   // For iOS support

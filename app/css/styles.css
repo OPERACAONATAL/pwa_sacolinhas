@@ -251,6 +251,7 @@ video {
 }
 
 .app__dialog {
+  border: 1px solid #148318;
   z-index: 12;
   background-color: #fff;
   max-width: 320px;
@@ -387,7 +388,7 @@ video {
 
 .app__input-submit {
   color: #ffffff;
-  border: 2px solid #fff;
+  border: none;
   background-color: #148318;
   padding: 12px 32px;
   cursor: pointer;
@@ -452,7 +453,7 @@ hr.custom {
   margin: 2px;
   padding: 2px;
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   flex-wrap: wrap;
   height: 2rem;
 }
@@ -461,4 +462,15 @@ hr.custom {
 }
 input[type="checkbox"] {
   margin: 0.25rem 0.25rem 0.25rem auto;
+  -ms-transform: scale(2); /* IE */
+  -moz-transform: scale(2); /* FF */
+  -webkit-transform: scale(2); /* Safari and Chrome */
+  -o-transform: scale(2); /* Opera */
+  transform: scale(2);
+}
+.hidden {
+  opacity: 0;
+}
+.header {
+  background-color: #dffee0;
 }
