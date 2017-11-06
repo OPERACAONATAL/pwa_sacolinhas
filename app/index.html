@@ -18,7 +18,6 @@
     <link rel="icon" type="image/png" href="/images/touch/favicon-32x32.png" sizes="32x32"/>
     <link rel="icon" type="image/png" href="/images/touch/favicon-16x16.png" sizes="16x16"/>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-    <script src="/js/opn.js"></script>
     <link rel="shortcut icon" href="/images/touch/favicon.ico">
     <link rel="manifest" href="/manifest.json">
   </head>
@@ -36,10 +35,12 @@
             <h5>Conteúdo lido</h5>
             <input type="text" id="result">
             <input type="text" id="name__api" placeholder="Nome do beneficiado">
-          </div>
-          <div class="app__dialog-actions">
-            <button type="button" class="app__dialog-open" onclick="openCard()">Abrir</button>
-            <button type="button" class="app__dialog-close">Fechar</button>
+            <div class="app__dialog-actions">
+              <button type="button" class="app__dialog-open" >Abrir</button>
+              <button type="button" class="app__dialog-close">Fechar</button>
+            </div>
+            <hr class="custom">
+            <div class="app__showCard"><form id="submit"></form></div>
           </div>
         </div>
 
